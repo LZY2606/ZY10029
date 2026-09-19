@@ -1,0 +1,34 @@
+# kempt configuration: https://github.com/ZacSweers/kempt
+
+[ktfmt]
+version = "0.64"
+
+[gjf]
+version = "1.36.1"
+
+[license-header]
+file = "config/license-header.txt"
+
+[ktfmt.license-header]
+excludes = "config/license-header-excludes-kt.txt"
+
+[paths]
+exclude = [
+  "**/build/**",
+  "**/.gradle/**",
+  "**/Dependencies.kt",
+  "**/testData/**/*.kt",
+  "**/test-gen/java/**/*.java",
+]
+
+[ktfmt.paths]
+include = [
+  "**/*.kt",
+  "**/*.kts",
+]
+
+[gjf.paths]
+include = ["**/*.java"]
+
+[hook]
+mode = "format"

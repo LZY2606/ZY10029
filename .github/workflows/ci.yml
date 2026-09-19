@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  # Only run push on main
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+  # Always run on PRs
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: 'ci-${{ github.event.merge_group.head_ref || github.head_ref }}-${{ github.workflow }}'
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: '23'
+
+      - uses: ZacSweers/kempt@main
+        with:
+          cache: true
+
+  generate-matrix:
+    name: generate build matrix
+    runs-on: ubuntu-slim
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Generate matrix
+        id: generate
+        run: ./scripts/generate-ci-matrix.sh
+
+  build:
+    name: 'Kotlin ${{ matrix.kotlin }} / KSP ${{ matrix.ksp_enabled }}'
+    runs-on: ubuntu-latest
+    needs: generate-matrix
+    strategy:
+      matrix: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: '23'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Check project
+        run: ./gradlew build check -PkotlinVersion=${{ matrix.kotlin }} -Pmoshix.useKsp=${{ matrix.ksp_enabled }} --quiet
+
+      - name: Check R8 tests
+        run: ./gradlew testR8 --quiet
+
+  # https://jakewharton.com/fan-in-to-a-single-required-github-action/
+  final-status:
+    if: always()
+    runs-on: ubuntu-slim
+    needs:
+      - format
+      - generate-matrix
+      - build
+    steps:
+      - name: Check
+        run: |
+          results=$(tr -d '\n' <<< '${{ toJSON(needs.*.result) }}')
+          if ! grep -q -v -E '(failure|cancelled)' <<< "$results"; then
+            echo "One or more required jobs failed"
+            exit 1
+          fi
+
+  publish-snapshot:
+    needs: final-status
+    name: 'Publish snapshot (main only)'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: '23'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Publish
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
+        run: ./publish.sh
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'

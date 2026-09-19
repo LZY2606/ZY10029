@@ -1,0 +1,35 @@
+public abstract interface annotation class dev/zacsweers/moshix/sealed/annotations/DefaultNull : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class dev/zacsweers/moshix/sealed/annotations/DefaultObject : java/lang/annotation/Annotation {
+}
+
+public abstract interface annotation class dev/zacsweers/moshix/sealed/annotations/FallbackJsonAdapter : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/Class;
+}
+
+public abstract interface annotation class dev/zacsweers/moshix/sealed/annotations/NestedSealed : java/lang/annotation/Annotation {
+}
+
+public final class dev/zacsweers/moshix/sealed/annotations/NestedSealed$Factory : com/squareup/moshi/JsonAdapter$Factory {
+	public fun <init> ()V
+	public fun create (Ljava/lang/reflect/Type;Ljava/util/Set;Lcom/squareup/moshi/Moshi;)Lcom/squareup/moshi/JsonAdapter;
+}
+
+public abstract interface annotation class dev/zacsweers/moshix/sealed/annotations/TypeLabel : java/lang/annotation/Annotation {
+	public abstract fun alternateLabels ()[Ljava/lang/String;
+	public abstract fun label ()Ljava/lang/String;
+}
+
+public final class dev/zacsweers/moshix/sealed/runtime/internal/ObjectJsonAdapter : com/squareup/moshi/JsonAdapter {
+	public fun <init> (Ljava/lang/Object;)V
+	public fun fromJson (Lcom/squareup/moshi/JsonReader;)Ljava/lang/Object;
+	public fun toJson (Lcom/squareup/moshi/JsonWriter;Ljava/lang/Object;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class dev/zacsweers/moshix/sealed/runtime/internal/Util {
+	public static final field INSTANCE Ldev/zacsweers/moshix/sealed/runtime/internal/Util;
+	public static final fun fallbackAdapter (Lcom/squareup/moshi/Moshi;Ljava/lang/Class;)Lcom/squareup/moshi/JsonAdapter;
+}
+

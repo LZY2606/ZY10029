@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.ModuleDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="    createEmptyExternalPackageFragment(moduleFragment.descriptor, FqName(packageName))"
+        errorLine2="                                                      ~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/BaseSymbols.kt"
+            line="159"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibilities appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="          visibility = DescriptorVisibilities.PRIVATE"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/api/DelegateKey.kt"
+            line="88"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="  private val visibility = target.visibility"
+        errorLine2="                                  ~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/api/MoshiAdapterGenerator.kt"
+            line="99"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibilities appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="      visibility = DescriptorVisibilities.PRIVATE"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/api/MoshiAdapterGenerator.kt"
+            line="271"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="      visibility = targetType.visibility // always public or internal"
+        errorLine2="                              ~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/sealed/SealedAdapterGenerator.kt"
+            line="209"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibilities appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="          visibility = DescriptorVisibilities.PRIVATE"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/sealed/SealedAdapterGenerator.kt"
+            line="237"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="internal data class TargetType("
+        errorLine2="                              ^">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/api/TargetType.kt"
+            line="11"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="  val visibility: DescriptorVisibility,"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/api/TargetType.kt"
+            line="18"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="  val visibility = type.visibility"
+        errorLine2="                        ~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/TargetTypes.kt"
+            line="39"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibilities appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="    if (visibility == DescriptorVisibilities.INTERNAL) {"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/TargetTypes.kt"
+            line="43"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="    if (visibility == DescriptorVisibilities.INTERNAL) {"
+        errorLine2="        ~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/TargetTypes.kt"
+            line="43"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="      visibility"
+        errorLine2="      ~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/TargetTypes.kt"
+            line="45"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibilities appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="          .any { it.visibility == DescriptorVisibilities.INTERNAL }"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/TargetTypes.kt"
+            line="51"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="          .any { it.visibility == DescriptorVisibilities.INTERNAL }"
+        errorLine2="                    ~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/TargetTypes.kt"
+            line="51"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibilities appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="      if (forceInternal) DescriptorVisibilities.INTERNAL else visibility"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/TargetTypes.kt"
+            line="52"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="      if (forceInternal) DescriptorVisibilities.INTERNAL else visibility"
+        errorLine2="                                                              ~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/TargetTypes.kt"
+            line="52"
+            column="63"/>
+    </issue>
+
+    <issue
+        id="KotlincFE10"
+        message="org.jetbrains.kotlin.descriptors.DescriptorVisibility appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon."
+        errorLine1="    visibility = resolvedVisibility,"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/dev/zacsweers/moshix/ir/compiler/TargetTypes.kt"
+            line="61"
+            column="18"/>
+    </issue>
+
+</issues>

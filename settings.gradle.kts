@@ -1,0 +1,82 @@
+// Copyright (C) 2026 Zac Sweers
+// SPDX-License-Identifier: Apache-2.0
+pluginManagement {
+  repositories {
+    mavenCentral()
+    google()
+    // Kotlin dev (previously bootstrap) repository, useful for testing against Kotlin dev builds.
+    // Usually only tested on CI shadow jobs
+    // https://kotlinlang.slack.com/archives/C0KLZSCHF/p1616514468003200?thread_ts=1616509748.001400&cid=C0KLZSCHF
+    maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev/") {
+      name = "Kotlin-Dev"
+      content {
+        // this repository *only* contains Kotlin artifacts (don't try others here)
+        includeGroupByRegex("org\\.jetbrains.*")
+      }
+    }
+    gradlePluginPortal()
+  }
+}
+
+dependencyResolutionManagement {
+  versionCatalogs {
+    if (System.getenv("DEP_OVERRIDES") == "true") {
+      val overrides = System.getenv().filterKeys { it.startsWith("DEP_OVERRIDE_") }
+      for (catalog in this) {
+        for ((key, value) in overrides) {
+          // Case-sensitive, don't adjust it after removing the prefix!
+          val catalogKey = key.removePrefix("DEP_OVERRIDE_")
+          println("Overriding $catalogKey with $value")
+          catalog.version(catalogKey, value)
+        }
+      }
+    }
+  }
+  repositories {
+    mavenCentral()
+    google()
+    // Kotlin dev (previously bootstrap) repository, useful for testing against Kotlin dev builds.
+    // Usually only tested on CI shadow jobs
+    // https://kotlinlang.slack.com/archives/C0KLZSCHF/p1616514468003200?thread_ts=1616509748.001400&cid=C0KLZSCHF
+    maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev/") {
+      name = "Kotlin-Dev"
+      content {
+        // this repository *only* contains Kotlin artifacts (don't try others here)
+        includeGroupByRegex("org\\.jetbrains.*")
+      }
+    }
+    // R8 releases repository for shrinker testing
+    maven("https://storage.googleapis.com/r8-releases/raw/") {
+      name = "R8-Releases"
+      content { includeModule("com.android.tools", "r8") }
+    }
+  }
+}
+
+rootProject.name = "moshix-root"
+
+include(
+  ":moshi-adapters",
+  ":moshi-immutable-adapters",
+  ":moshi-ir:moshi-compiler-plugin",
+  ":moshi-ir:moshi-kotlin-tests",
+  ":moshi-ir:moshi-kotlin-tests:extra-moshi-test-module",
+  ":moshi-metadata-reflect",
+  ":moshi-sealed:codegen",
+  ":moshi-sealed:java-sealed-reflect",
+  ":moshi-sealed:metadata-reflect",
+  ":moshi-sealed:reflect",
+  ":moshi-sealed:runtime",
+  ":moshi-sealed:sample",
+  ":moshi-sealed:sealed-interfaces-samples:java",
+  ":moshix-runtime",
+)
+
+includeBuild("moshi-ir/moshi-gradle-plugin") {
+  dependencySubstitution {
+    substitute(module("dev.zacsweers.moshix:moshi-gradle-plugin")).using(project(":"))
+  }
+}
+
+// https://docs.gradle.org/current/userguide/declaring_dependencies.html#sec:type-safe-project-accessors
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

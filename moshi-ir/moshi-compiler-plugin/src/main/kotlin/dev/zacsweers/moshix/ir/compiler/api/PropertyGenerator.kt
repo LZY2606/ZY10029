@@ -1,0 +1,121 @@
+// Copyright (C) 2026 Zac Sweers
+// SPDX-License-Identifier: Apache-2.0
+package dev.zacsweers.moshix.ir.compiler.api
+
+import dev.zacsweers.moshix.ir.compiler.util.NameAllocator
+import dev.zacsweers.moshix.ir.compiler.util.defaultPrimitiveValue
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.ir.builders.IrStatementsBuilder
+import org.jetbrains.kotlin.ir.builders.irBoolean
+import org.jetbrains.kotlin.ir.builders.irNull
+import org.jetbrains.kotlin.ir.builders.irTemporary
+import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.types.makeNullable
+import org.jetbrains.kotlin.ir.util.TypeRemapper
+
+/** Generates functions to encode and decode a property as JSON. */
+internal class PropertyGenerator(
+  val target: TargetProperty,
+  val delegateKey: DelegateKey,
+  val isTransientOrIgnored: Boolean = false,
+) {
+  val name: String = target.name
+  val jsonName: String = target.jsonName ?: target.name
+  val hasDefault: Boolean = target.hasDefault
+
+  lateinit var localName: String
+  lateinit var localIsPresentName: String
+  lateinit var localHasErrorName: String
+
+  val isRequired: Boolean
+    get() = !delegateKey.nullable && !hasDefault
+
+  val hasConstructorParameter: Boolean
+    get() = target.parameterIndex != -1
+
+  /**
+   * IsPresent is required if the following conditions are met:
+   * - Is not transient
+   * - Has a default
+   * - Is not a constructor parameter (for constructors we use a defaults mask)
+   * - Is nullable (because we differentiate absent from null)
+   *
+   * This is used to indicate that presence should be checked first before possible assigning null
+   * to an absent value
+   */
+  val hasLocalIsPresentName: Boolean =
+    !isTransientOrIgnored && hasDefault && !hasConstructorParameter && delegateKey.nullable
+  val hasConstructorDefault: Boolean = hasDefault && hasConstructorParameter
+
+  internal fun allocateNames(nameAllocator: NameAllocator) {
+    localName = nameAllocator.newName(name)
+    localIsPresentName = nameAllocator.newName("${name}Set")
+    localHasErrorName = nameAllocator.newName("${name}HasError")
+  }
+
+  internal fun remapTypes(remapper: TypeRemapper): PropertyGenerator {
+    return PropertyGenerator(
+        target = target.remapTypes(remapper),
+        delegateKey = delegateKey.remapTypes(remapper),
+        isTransientOrIgnored = isTransientOrIgnored,
+      )
+      .also { remapped ->
+        if (::localName.isInitialized) {
+          remapped.localName = localName
+          remapped.localIsPresentName = localIsPresentName
+          remapped.localHasErrorName = localHasErrorName
+        }
+      }
+  }
+
+  internal fun generateLocalProperty(
+    builder: IrStatementsBuilder<*>,
+    pluginContext: IrPluginContext,
+  ): IrVariable {
+    builder.apply {
+      val expression =
+        if (hasConstructorDefault) {
+          // We default to the primitive default type, as reflectively invoking the constructor
+          // without this (even though it's a throwaway) will fail argument type resolution in
+          // the reflective invocation.
+          defaultPrimitiveValue(target.type, pluginContext)
+        } else {
+          irNull(target.type.makeNullable())
+        }
+      return irTemporary(
+        expression,
+        isMutable = true,
+        nameHint = localName,
+        irType = expression.type,
+      )
+    }
+  }
+
+  internal fun generateLocalIsPresentProperty(
+    builder: IrStatementsBuilder<*>,
+    pluginContext: IrPluginContext,
+  ): IrVariable {
+    builder.apply {
+      return irTemporary(
+        irBoolean(false),
+        isMutable = true,
+        nameHint = localIsPresentName,
+        irType = pluginContext.irBuiltIns.booleanType,
+      )
+    }
+  }
+
+  internal fun generateLocalHasErrorProperty(
+    builder: IrStatementsBuilder<*>,
+    pluginContext: IrPluginContext,
+  ): IrVariable {
+    builder.apply {
+      return irTemporary(
+        irBoolean(false),
+        isMutable = true,
+        nameHint = localHasErrorName,
+        irType = pluginContext.irBuiltIns.booleanType,
+      )
+    }
+  }
+}
