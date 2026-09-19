@@ -85,6 +85,20 @@ subprojects {
     }
   }
 
+  pluginManager.withPlugin("maven-publish") {
+    val verifyRepository = providers.systemProperty("verify.repository").orNull
+    if (verifyRepository != null) {
+      extensions.configure<PublishingExtension> {
+        repositories {
+          maven {
+            name = "VerifyLocal"
+            url = uri(verifyRepository)
+          }
+        }
+      }
+    }
+  }
+
   pluginManager.withPlugin("com.android.lint") {
     configure<Lint> {
       fatal += "KotlincFE10"

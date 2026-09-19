@@ -104,6 +104,7 @@ abstract class R8Task : BaseR8Task() {
   @get:OutputFile abstract val mapping: RegularFileProperty
 
   @get:OutputFile abstract val r8Jar: RegularFileProperty
+  @get:InputFile abstract val testKeepRules: RegularFileProperty
 
   override fun computeArgs(): Iterable<String> {
     return buildList {
@@ -115,11 +116,38 @@ abstract class R8Task : BaseR8Task() {
       add(r8Jar.get().asFile.absolutePath)
       add("--pg-conf")
       add(r8Rules.get().asFile.absolutePath)
+      add("--pg-conf")
+      add(testKeepRules.get().asFile.absolutePath)
       add("--pg-map-output")
       add(mapping.get().asFile.absolutePath)
       add("--lib")
       add(javaHome.get())
     }
+  }
+}
+
+abstract class WriteR8TestKeepRules : DefaultTask() {
+  @get:OutputFile abstract val rulesFile: RegularFileProperty
+
+  @TaskAction
+  fun writeRules() {
+    rulesFile.get().asFile.writeText(
+      """
+      -dontobfuscate
+      -keepattributes Signature,InnerClasses,EnclosingMethod,RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations,AnnotationDefault
+      -keep class **Test { *; }
+      -keep class com.squareup.** { *; }
+      -keep class dev.zacsweers.** { *; }
+      -keep class com.google.common.** { *; }
+      -keep class kotlin.** { *; }
+      -keep class okhttp3.** { *; }
+      -keep class okio.** { *; }
+      -keep class org.junit.** { *; }
+      -keepclasseswithmembers class * {
+        @org.junit.Test <methods>;
+      }
+      """.trimIndent()
+    )
   }
 }
 
@@ -157,6 +185,11 @@ kotlin.target {
       argumentProviders += r8ArgumentProvider()
     }
 
+  val writeR8TestKeepRules =
+    tasks.register<WriteR8TestKeepRules>("writeR8TestKeepRules") {
+      rulesFile.set(layout.buildDirectory.file("shrinker/test-keep-rules.txt"))
+    }
+
   val r8Task =
     tasks.register<R8Task>("testJarR8") {
       group = BUILD_GROUP
@@ -171,6 +204,7 @@ kotlin.target {
       r8Rules.set(r8RulesExtractTask.flatMap { it.r8Rules })
       r8Jar.set(layout.buildDirectory.file("libs/${base.archivesName.get()}-testsR8.jar"))
       mapping.set(layout.buildDirectory.file("libs/${base.archivesName.get()}-mapping.txt"))
+      testKeepRules.set(writeR8TestKeepRules.flatMap { it.rulesFile })
       configureR8Inputs(mainJar, testJar, testDependencyFiles)
       argumentProviders += r8ArgumentProvider()
 
@@ -186,14 +220,25 @@ kotlin.target {
       }
     }
 
+  val unpackR8Tests =
+    tasks.register<Sync>("unpackR8Tests") {
+      group = VERIFICATION_GROUP
+      description = "Unpacks R8-processed test classes for JUnit discovery."
+
+      dependsOn(r8Task)
+      from(r8Task.map { zipTree(it.r8Jar) })
+      into(layout.buildDirectory.dir("shrinker/test-classes"))
+    }
+
   tasks.register<Test>("testR8") {
     group = VERIFICATION_GROUP
     description = "Runs the unit tests with R8-processed classes."
 
-    dependsOn(r8Task)
-    classpath = project.files(r8Task.map { it.r8Jar })
-    testClassesDirs = project.files(testDependencyFiles)
+    dependsOn(unpackR8Tests)
+    classpath = project.files(unpackR8Tests.map { it.destinationDir }, testDependencyFiles)
+    testClassesDirs = project.files(unpackR8Tests.map { it.destinationDir })
 
+    useJUnit()
     systemProperty("moshi.r8Test", "true")
   }
 }

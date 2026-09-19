@@ -47,7 +47,7 @@ jobs:
         run: ./scripts/generate-ci-matrix.sh
 
   build:
-    name: 'Kotlin ${{ matrix.kotlin }} / KSP ${{ matrix.ksp_enabled }}'
+    name: 'verify full: Kotlin ${{ matrix.kotlin }} / KSP ${{ matrix.ksp_enabled }}'
     runs-on: ubuntu-latest
     needs: generate-matrix
     strategy:
@@ -67,11 +67,59 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Check project
-        run: ./gradlew build check -PkotlinVersion=${{ matrix.kotlin }} -Pmoshix.useKsp=${{ matrix.ksp_enabled }} --quiet
+      - name: Verify full matrix shard
+        run: sh tools/verify.sh --full --online --kotlin "${{ matrix.kotlin }}" --ksp "${{ matrix.ksp_enabled }}"
 
-      - name: Check R8 tests
-        run: ./gradlew testR8 --quiet
+      - name: Upload module test summaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'test-summaries-kotlin-${{ matrix.kotlin }}-ksp-${{ matrix.ksp_enabled }}'
+          path: .verify/test-reports/
+          if-no-files-found: error
+
+      - name: Upload verify logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'verify-logs-kotlin-${{ matrix.kotlin }}-ksp-${{ matrix.kotlin }}'
+          path: .verify/logs/
+          if-no-files-found: warn
+
+  publish-metadata:
+    name: verify quick and publish metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: '23'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Verify quick mode and publish metadata
+        run: sh tools/verify.sh --quick --online
+
+      - name: Upload module test summaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-summaries-quick-publish
+          path: .verify/test-reports/
+          if-no-files-found: error
+
+      - name: Upload verify logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-logs-quick-publish
+          path: .verify/logs/
+          if-no-files-found: warn
 
   # https://jakewharton.com/fan-in-to-a-single-required-github-action/
   final-status:
@@ -81,6 +129,7 @@ jobs:
       - format
       - generate-matrix
       - build
+      - publish-metadata
     steps:
       - name: Check
         run: |

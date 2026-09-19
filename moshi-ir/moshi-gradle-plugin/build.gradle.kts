@@ -4,6 +4,7 @@ import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.api.publish.PublishingExtension
 
 plugins {
   alias(libs.plugins.kotlinJvm)
@@ -75,6 +76,18 @@ dokka {
 }
 
 configure<MavenPublishBaseExtension> { publishToMavenCentral(automaticRelease = true) }
+
+val verifyRepository = providers.systemProperty("verify.repository").orNull
+if (verifyRepository != null) {
+  configure<PublishingExtension> {
+    repositories {
+      maven {
+        name = "VerifyLocal"
+        url = uri(verifyRepository)
+      }
+    }
+  }
+}
 
 dependencies {
   compileOnly(libs.kotlin.gradlePlugin)

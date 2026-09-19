@@ -1,6 +1,7 @@
 // Copyright (C) 2026 Zac Sweers
 // SPDX-License-Identifier: Apache-2.0
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.component.AdhocComponentWithVariants
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -8,22 +9,50 @@ plugins {
   alias(libs.plugins.kotlinJvm)
   alias(libs.plugins.dokka)
   `java-test-fixtures`
-  alias(libs.plugins.mavenPublish)
   alias(libs.plugins.ksp)
   alias(libs.plugins.lint)
   alias(libs.plugins.mavenShadow)
   idea
+  alias(libs.plugins.mavenPublish)
 }
+
+(components.getByName("java") as AdhocComponentWithVariants).apply {
+  withVariantsFromConfiguration(configurations.getByName("testFixturesApiElements")) { skip() }
+  withVariantsFromConfiguration(configurations.getByName("testFixturesRuntimeElements")) { skip() }
+}
+
+tasks.matching { it.name == "generateMetadataFileForMavenPublication" }.configureEach {
+  doLast {
+    val metadataTask = this as org.gradle.api.publish.tasks.GenerateModuleMetadata
+    val metadataFile = metadataTask.outputFile.get().asFile
+    @Suppress("UNCHECKED_CAST")
+    val metadata = groovy.json.JsonSlurper().parse(metadataFile) as MutableMap<String, Any?>
+    val variants = (metadata["variants"] as MutableList<MutableMap<String, Any?>>)
+    variants.removeAll { variant ->
+      val capabilities = variant["capabilities"] as? List<Map<String, Any?>>
+      capabilities?.any { capability ->
+        capability["name"] == "moshi-compiler-plugin-test-fixtures"
+      } == true
+    }
+    metadataFile.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(metadata)))
+  }
+}
+tasks.matching { it.name == "testFixturesSourcesJar" }.configureEach { enabled = false }
+
+val generatedTestsDir =
+  objects.directoryProperty().fileValue(
+    file(providers.gradleProperty("moshix.generatedTestsRoot").getOrElse("test-gen"))
+  )
 
 sourceSets {
   test {
-    java.setSrcDirs(listOf("test-gen/java"))
+    java.setSrcDirs(listOf(generatedTestsDir.get().asFile))
     kotlin.setSrcDirs(listOf("src/test/kotlin"))
     resources.setSrcDirs(listOf("testData"))
   }
 }
 
-idea { module.generatedSourceDirs.add(projectDir.resolve("test-gen/java")) }
+idea { module.generatedSourceDirs.add(generatedTestsDir.dir("java").get().asFile) }
 
 tasks.withType<KotlinCompile>().configureEach {
   compilerOptions {
@@ -137,11 +166,12 @@ val generateTests =
       .dir(layout.projectDirectory.dir("testData"))
       .withPropertyName("testData")
       .withPathSensitivity(PathSensitivity.RELATIVE)
-    outputs.dir(layout.projectDirectory.dir("test-gen")).withPropertyName("generatedTests")
+    outputs.dir(generatedTestsDir).withPropertyName("generatedTests")
 
     classpath = sourceSets.testFixtures.get().runtimeClasspath
     mainClass.set("dev.zacsweers.moshix.ir.compiler.GenerateTestsKt")
     workingDir = rootDir
+    systemProperty("moshix.generatedTestsRoot", generatedTestsDir.get().asFile.absolutePath)
   }
 
 tasks.compileTestKotlin { dependsOn(generateTests) }

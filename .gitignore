@@ -46,6 +46,7 @@ moshi-ir/moshi-compiler-plugin/test-gen/
 .gradletasknamecache
 build/
 .kotlin/
+.verify/
 
 # Local configuration file (sdk path, etc)
 local.properties
