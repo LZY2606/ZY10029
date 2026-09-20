@@ -117,6 +117,13 @@ tasks.test {
 
   systemProperty("moshix.jvmTarget", libs.versions.jvmTarget.get())
 
+  // Golden files (testData/**/*.diag.txt) are verify-only by default: the test framework fails
+  // on drift instead of rewriting them. Opt in to overwriting with -Pmoshix.updateTestData=true.
+  systemProperty(
+    "kotlin.test.update.test.data",
+    providers.gradleProperty("moshix.updateTestData").orElse("false").get(),
+  )
+
   doFirst { systemProperty("moshiRuntime.classpath", moshiRuntimeClasspath.get()) }
 
   // Properties required to run the internal test framework.
@@ -143,6 +150,46 @@ val generateTests =
     mainClass.set("dev.zacsweers.moshix.ir.compiler.GenerateTestsKt")
     workingDir = rootDir
   }
+
+// Regenerates the test sources into a throwaway build directory and diffs them against the
+// current test-gen sources. Verify-only: never writes into test-gen. Fails with a minimal
+// unified diff when the generated sources drift from testData.
+val verifyGeneratedSourcesDir = layout.buildDirectory.dir("verifyGeneratedSources")
+
+val regenerateTestsForVerify =
+  tasks.register<JavaExec>("regenerateTestsForVerify") {
+    inputs
+      .dir(layout.projectDirectory.dir("testData"))
+      .withPropertyName("testData")
+      .withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.dir(verifyGeneratedSourcesDir).withPropertyName("regeneratedTests")
+
+    classpath = sourceSets.testFixtures.get().runtimeClasspath
+    mainClass.set("dev.zacsweers.moshix.ir.compiler.GenerateTestsKt")
+    workingDir = rootDir
+    args =
+      listOf(
+        "moshi-ir/moshi-compiler-plugin/testData",
+        verifyGeneratedSourcesDir.get().asFile.resolve("java").absolutePath,
+      )
+  }
+
+tasks.register<Exec>("verifyGeneratedSources") {
+  group = "verification"
+  description =
+    "Verifies test-gen sources match testData without overwriting them. Fails with a diff on drift."
+
+  dependsOn(generateTests, regenerateTestsForVerify)
+
+  val current = layout.projectDirectory.dir("test-gen/java").asFile
+  val regenerated = verifyGeneratedSourcesDir.get().asFile.resolve("java")
+  inputs.dir(current).withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.dir(regenerated).withPathSensitivity(PathSensitivity.RELATIVE)
+
+  commandLine("diff", "-ru", current.absolutePath, regenerated.absolutePath)
+  // diff exits 1 on differences; surface that as a task failure with the diff in the output.
+  isIgnoreExitValue = false
+}
 
 tasks.compileTestKotlin { dependsOn(generateTests) }
 

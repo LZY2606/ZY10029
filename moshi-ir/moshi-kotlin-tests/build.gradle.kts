@@ -155,6 +155,43 @@ kotlin.target {
       r8Rules.set(layout.buildDirectory.file("shrinker/r8.txt"))
       configureR8Inputs(mainJar, testJar, testDependencyFiles)
       argumentProviders += r8ArgumentProvider()
+
+      doLast {
+        // Library jars only ship keeps for their own classes. The test harness itself
+        // (JUnit 4 + Hamcrest) must survive shrinking or the processed jar is not runnable.
+        r8Rules.get().asFile.appendText(
+          """
+          |
+          |# Keep the JUnit 4 test harness so testR8 can execute the processed jar.
+          |-keep class junit.** { *; }
+          |-keep class org.junit.** { *; }
+          |-keep class org.hamcrest.** { *; }
+          |
+          |# Keep test classes (with their single public constructor) and JUnit 4
+          |# lifecycle methods.
+          |-keepclasseswithmembers class * {
+          |    public <init>();
+          |    @org.junit.Test *;
+          |}
+          |-keepclassmembers class * { @org.junit.Before *; }
+          |-keepclassmembers class * { @org.junit.After *; }
+          |-keepclassmembers class * { @org.junit.BeforeClass *; }
+          |-keepclassmembers class * { @org.junit.AfterClass *; }
+          |
+          |# JUnit discovers tests via runtime annotations; Moshi needs generics and
+          |# Kotlin metadata for reflective lookups.
+          |-keepattributes RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations,Signature,InnerClasses,EnclosingMethod
+          |
+          |# Test models, generated adapters, and the Truth assertion library are
+          |# exercised reflectively (synthetic default constructors, comparison
+          |# failures), so keep them intact.
+          |-keep class com.squareup.moshi.** { *; }
+          |-keep class dev.zacsweers.** { *; }
+          |-keep class com.google.common.truth.** { *; }
+          |
+          """.trimMargin()
+        )
+      }
     }
 
   val r8Task =
